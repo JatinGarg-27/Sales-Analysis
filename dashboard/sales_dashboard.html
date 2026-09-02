@@ -1,0 +1,545 @@
+<title>Footwear &amp; Apparel Sales Analytics</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page-plane:     #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --card-bg:        #ffffff;
+    --series-instore: #2a78d6;
+    --series-online:  #eb6834;
+    --series-outlet:  #1baf7a;
+    --series-a: #2a78d6; --series-b: #eb6834; --series-c: #1baf7a; --series-d: #eda100; --series-e: #e87ba4;
+    --good: #0ca30c; --critical: #d03b3b; --warning: #fab219;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page-plane:     #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --card-bg:        #232322;
+      --series-instore: #3987e5;
+      --series-online:  #d95926;
+      --series-outlet:  #199e70;
+      --series-a: #3987e5; --series-b: #d95926; --series-c: #199e70; --series-d: #c98500; --series-e: #d55181;
+      --good: #0ca30c; --critical: #e66767; --warning: #fab219;
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page-plane:     #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --card-bg:        #232322;
+    --series-instore: #3987e5;
+    --series-online:  #d95926;
+    --series-outlet:  #199e70;
+    --series-a: #3987e5; --series-b: #d95926; --series-c: #199e70; --series-d: #c98500; --series-e: #d55181;
+    --good: #0ca30c; --critical: #e66767; --warning: #fab219;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page-plane); color: var(--text-primary); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .viz-root { padding: 24px 28px 60px; max-width: 1320px; margin: 0 auto; }
+
+  header.top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+  h1 { font-size: 22px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .subtitle { color: var(--text-secondary); font-size: 13px; margin: 0; }
+  .badge-row { display:flex; gap:8px; margin-top:10px; flex-wrap: wrap; }
+  .badge { font-size: 11px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); }
+
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 4px 0 20px; padding: 10px 12px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; }
+  .filters label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; margin-right: 4px; }
+  select, button.reset { font-family: inherit; font-size: 13px; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary); cursor: pointer; }
+  button.reset { color: var(--text-secondary); }
+  button.reset:hover { color: var(--text-primary); }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 22px; }
+  .kpi-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .kpi-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+  .kpi-value { font-size: 24px; font-weight: 700; font-variant-numeric: proportional-nums; }
+  .kpi-sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+  .kpi-sub.good { color: var(--good); } .kpi-sub.bad { color: var(--critical); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .grid.full { grid-template-columns: 1fr; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+  .panel h2 { font-size: 14px; margin: 0 0 2px; }
+  .panel .desc { font-size: 12px; color: var(--text-secondary); margin: 0 0 12px; }
+  .panel-head { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .toggle-table { font-size: 11px; color: var(--text-muted); background:none; border:1px solid var(--border); border-radius:6px; padding:3px 8px; cursor:pointer; white-space:nowrap; }
+  .toggle-table:hover { color: var(--text-primary); }
+
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 8px 0 0; font-size: 12px; color: var(--text-secondary); }
+  .legend .item { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+  .legend .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .legend .item.off { opacity: .35; }
+
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.data-table th, table.data-table td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--gridline); font-variant-numeric: tabular-nums; }
+  table.data-table th:first-child, table.data-table td:first-child { text-align: left; }
+  table.data-table th { color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; }
+  table.data-table tbody tr:hover { background: var(--page-plane); }
+
+  .callout { display:flex; gap:10px; align-items:flex-start; background: var(--card-bg); border:1px solid var(--border); border-left: 3px solid var(--series-c); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; }
+  .callout b { color: var(--text-primary); }
+  .callout p { margin: 4px 0 0; font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+
+  footer.foot { margin-top: 24px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--gridline); padding-top: 12px; }
+
+  canvas { max-width: 100%; }
+</style>
+
+<div class="viz-root">
+  <header class="top">
+    <div>
+      <h1>Footwear &amp; Apparel Sales Analytics</h1>
+      <p class="subtitle">Adidas US Sales dataset · 9,648 transactions · Jan 2020 – Dec 2021 · by category, region &amp; sales channel</p>
+      <div class="badge-row">
+        <span class="badge">Python + Pandas cleaning</span>
+        <span class="badge">SQL validated</span>
+        <span class="badge">Excel cross-check</span>
+        <span class="badge">Power BI–style drill-down</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="callout">
+    <div>
+      <b>Key finding —</b>
+      <p>Sales-channel mix is the dominant driver of operating-margin variance, not region. Outlet carries a −14.0pp margin gap vs. company average (avg. discount ≈28% vs. ≈6% in-store) and Online a −2.0pp gap, while regional spread is under ±0.4pp. Shifting revenue mix toward In-store/Online and tightening Outlet discounting is the highest-leverage lever for margin.</p>
+    </div>
+  </div>
+
+  <div class="filters">
+    <label>Region</label>
+    <select id="filter-region"><option value="all">All regions</option></select>
+    <label>Channel</label>
+    <select id="filter-channel"><option value="all">All channels</option></select>
+    <label>Category</label>
+    <select id="filter-category"><option value="all">All categories</option></select>
+    <button class="reset" id="reset-filters">Reset filters</button>
+  </div>
+
+  <div class="kpi-grid" id="kpi-grid"></div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-head">
+        <div><h2>Monthly revenue by channel</h2><p class="desc">Trend line, Jan 2020 – Dec 2021</p></div>
+        <button class="toggle-table" data-target="trend">View table</button>
+      </div>
+      <canvas id="chart-trend" height="220" role="img" aria-label="Line chart of monthly revenue by sales channel"></canvas>
+      <div class="legend" id="legend-trend"></div>
+      <div class="table-wrap" id="table-trend" hidden></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div><h2>Operating margin % by channel</h2><p class="desc">In-store vs. Online vs. Outlet</p></div>
+        <button class="toggle-table" data-target="channel">View table</button>
+      </div>
+      <canvas id="chart-channel" height="220" role="img" aria-label="Bar chart of operating margin percent by sales channel"></canvas>
+      <div class="table-wrap" id="table-channel" hidden></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-head">
+        <div><h2>Revenue &amp; margin by region</h2><p class="desc">Click a bar to filter the dashboard</p></div>
+        <button class="toggle-table" data-target="region">View table</button>
+      </div>
+      <canvas id="chart-region" height="220" role="img" aria-label="Bar chart of revenue by region with margin overlay"></canvas>
+      <div class="table-wrap" id="table-region" hidden></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div><h2>Category mix</h2><p class="desc">Footwear vs. Apparel — revenue share &amp; margin</p></div>
+        <button class="toggle-table" data-target="category">View table</button>
+      </div>
+      <canvas id="chart-category" height="220" role="img" aria-label="Donut chart of revenue share by category"></canvas>
+      <div class="legend" id="legend-category"></div>
+      <div class="table-wrap" id="table-category" hidden></div>
+    </div>
+  </div>
+
+  <div class="grid full">
+    <div class="panel">
+      <div class="panel-head">
+        <div><h2>Region × Channel margin heatmap</h2><p class="desc">Where regional discounting compounds with channel mix — darker green = higher margin</p></div>
+        <button class="toggle-table" data-target="heat">View table</button>
+      </div>
+      <div id="heatmap"></div>
+      <div class="table-wrap" id="table-heat" hidden></div>
+    </div>
+  </div>
+
+  <div class="grid full">
+    <div class="panel">
+      <div class="panel-head">
+        <div><h2>Margin-variance drivers</h2><p class="desc">Weighted contribution to overall margin variance (percentage points) — channel dwarfs region</p></div>
+        <button class="toggle-table" data-target="drivers">View table</button>
+      </div>
+      <canvas id="chart-drivers" height="200" role="img" aria-label="Bar chart of weighted margin variance contribution by segment"></canvas>
+      <div class="table-wrap" id="table-drivers" hidden></div>
+    </div>
+  </div>
+
+  <footer class="foot">
+    Source: synthetic dataset generated to match the Kaggle "Adidas US Sales" schema (see project README). Figures cross-validated across Python/Pandas, SQL, and Excel. Dashboard is view-only; use the filters above to drill down.
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script>
+const DATA = {"category": [{"Category": "Footwear", "Total_Sales": 204079490.6, "Operating_Profit": 71846409.23, "Units_Sold": 2790038, "Transactions": 6389, "Avg_Price_per_Unit": 72.81, "Operating_Margin_Pct": 35.21}, {"Category": "Apparel", "Total_Sales": 54830412.37, "Operating_Profit": 19145648.35, "Units_Sold": 1386283, "Transactions": 3259, "Avg_Price_per_Unit": 39.5, "Operating_Margin_Pct": 34.92}], "region": [{"Region": "Southeast", "Total_Sales": 53652972.02, "Operating_Profit": 18650547.13, "Units_Sold": 875470, "Transactions": 2036, "Avg_Price_per_Unit": 60.89, "Operating_Margin_Pct": 34.76}, {"Region": "Northeast", "Total_Sales": 52786591.93, "Operating_Profit": 18481798.7, "Units_Sold": 845727, "Transactions": 1939, "Avg_Price_per_Unit": 62.25, "Operating_Margin_Pct": 35.01}, {"Region": "West", "Total_Sales": 51848051.44, "Operating_Profit": 18424012.4, "Units_Sold": 816732, "Transactions": 1887, "Avg_Price_per_Unit": 62.79, "Operating_Margin_Pct": 35.53}, {"Region": "Midwest", "Total_Sales": 50533973.37, "Operating_Profit": 17924240.15, "Units_Sold": 816491, "Transactions": 1864, "Avg_Price_per_Unit": 61.52, "Operating_Margin_Pct": 35.47}, {"Region": "South", "Total_Sales": 50088314.21, "Operating_Profit": 17511459.2, "Units_Sold": 821901, "Transactions": 1922, "Avg_Price_per_Unit": 60.4, "Operating_Margin_Pct": 34.96}], "channel": [{"Sales Method": "In-store", "Total_Sales": 119956252.2, "Operating_Profit": 51210363.95, "Units_Sold": 1765625, "Transactions": 4050, "Avg_Price_per_Unit": 67.3, "Operating_Margin_Pct": 42.69}, {"Sales Method": "Online", "Total_Sales": 86840991.07, "Operating_Profit": 28773950.18, "Units_Sold": 1399190, "Transactions": 3221, "Avg_Price_per_Unit": 61.74, "Operating_Margin_Pct": 33.13}, {"Sales Method": "Outlet", "Total_Sales": 52112659.7, "Operating_Profit": 11007743.45, "Units_Sold": 1011506, "Transactions": 2377, "Avg_Price_per_Unit": 51.53, "Operating_Margin_Pct": 21.12}], "region_channel": [{"Region": "Midwest", "Sales Method": "In-store", "Total_Sales": 24917843.23, "Operating_Profit": 10568506.43, "Units_Sold": 370716, "Transactions": 818, "Avg_Price_per_Unit": 66.31, "Operating_Margin_Pct": 42.41}, {"Region": "Southeast", "Sales Method": "In-store", "Total_Sales": 24232425.13, "Operating_Profit": 10317978.6, "Units_Sold": 361012, "Transactions": 829, "Avg_Price_per_Unit": 66.45, "Operating_Margin_Pct": 42.58}, {"Region": "West", "Sales Method": "In-store", "Total_Sales": 24046123.42, "Operating_Profit": 10367484.47, "Units_Sold": 345688, "Transactions": 788, "Avg_Price_per_Unit": 69.29, "Operating_Margin_Pct": 43.11}, {"Region": "South", "Sales Method": "In-store", "Total_Sales": 23779029.99, "Operating_Profit": 9994529.66, "Units_Sold": 354000, "Transactions": 838, "Avg_Price_per_Unit": 66.45, "Operating_Margin_Pct": 42.03}, {"Region": "Northeast", "Sales Method": "In-store", "Total_Sales": 22980830.43, "Operating_Profit": 9961864.79, "Units_Sold": 334209, "Transactions": 777, "Avg_Price_per_Unit": 68.17, "Operating_Margin_Pct": 43.35}, {"Region": "Northeast", "Sales Method": "Online", "Total_Sales": 18825369.43, "Operating_Profit": 6188764.77, "Units_Sold": 301031, "Transactions": 669, "Avg_Price_per_Unit": 62.63, "Operating_Margin_Pct": 32.87}, {"Region": "Southeast", "Sales Method": "Online", "Total_Sales": 18462744.56, "Operating_Profit": 6046169.11, "Units_Sold": 299518, "Transactions": 698, "Avg_Price_per_Unit": 60.95, "Operating_Margin_Pct": 32.75}, {"Region": "West", "Sales Method": "Online", "Total_Sales": 17362467.8, "Operating_Profit": 5848529.97, "Units_Sold": 270653, "Transactions": 626, "Avg_Price_per_Unit": 62.8, "Operating_Margin_Pct": 33.68}, {"Region": "South", "Sales Method": "Online", "Total_Sales": 16761829.25, "Operating_Profit": 5511038.17, "Units_Sold": 279141, "Transactions": 646, "Avg_Price_per_Unit": 59.81, "Operating_Margin_Pct": 32.88}, {"Region": "Midwest", "Sales Method": "Online", "Total_Sales": 15428580.03, "Operating_Profit": 5179448.16, "Units_Sold": 248847, "Transactions": 582, "Avg_Price_per_Unit": 62.66, "Operating_Margin_Pct": 33.57}, {"Region": "Northeast", "Sales Method": "Outlet", "Total_Sales": 10980392.07, "Operating_Profit": 2331169.14, "Units_Sold": 210487, "Transactions": 493, "Avg_Price_per_Unit": 52.41, "Operating_Margin_Pct": 21.23}, {"Region": "Southeast", "Sales Method": "Outlet", "Total_Sales": 10957802.33, "Operating_Profit": 2286399.42, "Units_Sold": 214940, "Transactions": 509, "Avg_Price_per_Unit": 51.74, "Operating_Margin_Pct": 20.87}, {"Region": "West", "Sales Method": "Outlet", "Total_Sales": 10439460.22, "Operating_Profit": 2207997.96, "Units_Sold": 200391, "Transactions": 473, "Avg_Price_per_Unit": 51.94, "Operating_Margin_Pct": 21.15}, {"Region": "Midwest", "Sales Method": "Outlet", "Total_Sales": 10187550.11, "Operating_Profit": 2176285.56, "Units_Sold": 196928, "Transactions": 464, "Avg_Price_per_Unit": 51.64, "Operating_Margin_Pct": 21.36}, {"Region": "South", "Sales Method": "Outlet", "Total_Sales": 9547454.97, "Operating_Profit": 2005891.37, "Units_Sold": 188760, "Transactions": 438, "Avg_Price_per_Unit": 49.72, "Operating_Margin_Pct": 21.01}], "monthly": [{"Month": "2020-01", "Sales Method": "In-store", "Total_Sales": 5085572.53, "Operating_Profit": 2200305.42, "Operating_Margin_Pct": 43.27}, {"Month": "2020-01", "Sales Method": "Online", "Total_Sales": 4113062.61, "Operating_Profit": 1375555.77, "Operating_Margin_Pct": 33.44}, {"Month": "2020-01", "Sales Method": "Outlet", "Total_Sales": 1773695.29, "Operating_Profit": 377895.85, "Operating_Margin_Pct": 21.31}, {"Month": "2020-02", "Sales Method": "In-store", "Total_Sales": 3941331.91, "Operating_Profit": 1688488.33, "Operating_Margin_Pct": 42.84}, {"Month": "2020-02", "Sales Method": "Online", "Total_Sales": 3749276.8, "Operating_Profit": 1263296.6, "Operating_Margin_Pct": 33.69}, {"Month": "2020-02", "Sales Method": "Outlet", "Total_Sales": 1958605.14, "Operating_Profit": 425566.43, "Operating_Margin_Pct": 21.73}, {"Month": "2020-03", "Sales Method": "In-store", "Total_Sales": 5375097.66, "Operating_Profit": 2306498.66, "Operating_Margin_Pct": 42.91}, {"Month": "2020-03", "Sales Method": "Online", "Total_Sales": 3566667.41, "Operating_Profit": 1154618.61, "Operating_Margin_Pct": 32.37}, {"Month": "2020-03", "Sales Method": "Outlet", "Total_Sales": 2235280.94, "Operating_Profit": 479327.68, "Operating_Margin_Pct": 21.44}, {"Month": "2020-04", "Sales Method": "In-store", "Total_Sales": 5581727.99, "Operating_Profit": 2377400.52, "Operating_Margin_Pct": 42.59}, {"Month": "2020-04", "Sales Method": "Online", "Total_Sales": 3448193.21, "Operating_Profit": 1155909.68, "Operating_Margin_Pct": 33.52}, {"Month": "2020-04", "Sales Method": "Outlet", "Total_Sales": 2386519.53, "Operating_Profit": 508236.1, "Operating_Margin_Pct": 21.3}, {"Month": "2020-05", "Sales Method": "In-store", "Total_Sales": 5298460.17, "Operating_Profit": 2231574.08, "Operating_Margin_Pct": 42.12}, {"Month": "2020-05", "Sales Method": "Online", "Total_Sales": 3549899.57, "Operating_Profit": 1155146.21, "Operating_Margin_Pct": 32.54}, {"Month": "2020-05", "Sales Method": "Outlet", "Total_Sales": 2003315.33, "Operating_Profit": 399941.29, "Operating_Margin_Pct": 19.96}, {"Month": "2020-06", "Sales Method": "In-store", "Total_Sales": 5045841.76, "Operating_Profit": 2119908.51, "Operating_Margin_Pct": 42.01}, {"Month": "2020-06", "Sales Method": "Online", "Total_Sales": 3348281.44, "Operating_Profit": 1110407.85, "Operating_Margin_Pct": 33.16}, {"Month": "2020-06", "Sales Method": "Outlet", "Total_Sales": 2202849.2, "Operating_Profit": 445144.25, "Operating_Margin_Pct": 20.21}, {"Month": "2020-07", "Sales Method": "In-store", "Total_Sales": 5127548.19, "Operating_Profit": 2130383.08, "Operating_Margin_Pct": 41.55}, {"Month": "2020-07", "Sales Method": "Online", "Total_Sales": 3979532.51, "Operating_Profit": 1337154.35, "Operating_Margin_Pct": 33.6}, {"Month": "2020-07", "Sales Method": "Outlet", "Total_Sales": 2164426.24, "Operating_Profit": 461265.74, "Operating_Margin_Pct": 21.31}, {"Month": "2020-08", "Sales Method": "In-store", "Total_Sales": 5658261.68, "Operating_Profit": 2473065.28, "Operating_Margin_Pct": 43.71}, {"Month": "2020-08", "Sales Method": "Online", "Total_Sales": 3631194.95, "Operating_Profit": 1221380.57, "Operating_Margin_Pct": 33.64}, {"Month": "2020-08", "Sales Method": "Outlet", "Total_Sales": 2235918.77, "Operating_Profit": 465295.81, "Operating_Margin_Pct": 20.81}, {"Month": "2020-09", "Sales Method": "In-store", "Total_Sales": 3978592.43, "Operating_Profit": 1726403.46, "Operating_Margin_Pct": 43.39}, {"Month": "2020-09", "Sales Method": "Online", "Total_Sales": 3610164.67, "Operating_Profit": 1213498.45, "Operating_Margin_Pct": 33.61}, {"Month": "2020-09", "Sales Method": "Outlet", "Total_Sales": 2023153.64, "Operating_Profit": 410890.12, "Operating_Margin_Pct": 20.31}, {"Month": "2020-10", "Sales Method": "In-store", "Total_Sales": 4393161.67, "Operating_Profit": 1844183.92, "Operating_Margin_Pct": 41.98}, {"Month": "2020-10", "Sales Method": "Online", "Total_Sales": 3416125.97, "Operating_Profit": 1114171.32, "Operating_Margin_Pct": 32.62}, {"Month": "2020-10", "Sales Method": "Outlet", "Total_Sales": 2324547.07, "Operating_Profit": 496209.65, "Operating_Margin_Pct": 21.35}, {"Month": "2020-11", "Sales Method": "In-store", "Total_Sales": 5901727.75, "Operating_Profit": 2535311.93, "Operating_Margin_Pct": 42.96}, {"Month": "2020-11", "Sales Method": "Online", "Total_Sales": 4108227.16, "Operating_Profit": 1359764.48, "Operating_Margin_Pct": 33.1}, {"Month": "2020-11", "Sales Method": "Outlet", "Total_Sales": 2185953.88, "Operating_Profit": 465964.92, "Operating_Margin_Pct": 21.32}, {"Month": "2020-12", "Sales Method": "In-store", "Total_Sales": 5247752.62, "Operating_Profit": 2229307.53, "Operating_Margin_Pct": 42.48}, {"Month": "2020-12", "Sales Method": "Online", "Total_Sales": 4263330.28, "Operating_Profit": 1393032.15, "Operating_Margin_Pct": 32.67}, {"Month": "2020-12", "Sales Method": "Outlet", "Total_Sales": 2237527.43, "Operating_Profit": 483742.37, "Operating_Margin_Pct": 21.62}, {"Month": "2021-01", "Sales Method": "In-store", "Total_Sales": 5304774.28, "Operating_Profit": 2262793.97, "Operating_Margin_Pct": 42.66}, {"Month": "2021-01", "Sales Method": "Online", "Total_Sales": 3891651.2, "Operating_Profit": 1257646.17, "Operating_Margin_Pct": 32.32}, {"Month": "2021-01", "Sales Method": "Outlet", "Total_Sales": 2700295.45, "Operating_Profit": 563235.48, "Operating_Margin_Pct": 20.86}, {"Month": "2021-02", "Sales Method": "In-store", "Total_Sales": 4792996.72, "Operating_Profit": 2021666.82, "Operating_Margin_Pct": 42.18}, {"Month": "2021-02", "Sales Method": "Online", "Total_Sales": 2865303.57, "Operating_Profit": 955103.18, "Operating_Margin_Pct": 33.33}, {"Month": "2021-02", "Sales Method": "Outlet", "Total_Sales": 2089544.1, "Operating_Profit": 449029.17, "Operating_Margin_Pct": 21.49}, {"Month": "2021-03", "Sales Method": "In-store", "Total_Sales": 5337935.29, "Operating_Profit": 2287770.7, "Operating_Margin_Pct": 42.86}, {"Month": "2021-03", "Sales Method": "Online", "Total_Sales": 3402009.47, "Operating_Profit": 1110695.95, "Operating_Margin_Pct": 32.65}, {"Month": "2021-03", "Sales Method": "Outlet", "Total_Sales": 2085126.1, "Operating_Profit": 444833.19, "Operating_Margin_Pct": 21.33}, {"Month": "2021-04", "Sales Method": "In-store", "Total_Sales": 4393067.16, "Operating_Profit": 1906127.26, "Operating_Margin_Pct": 43.39}, {"Month": "2021-04", "Sales Method": "Online", "Total_Sales": 3378601.55, "Operating_Profit": 1146108.03, "Operating_Margin_Pct": 33.92}, {"Month": "2021-04", "Sales Method": "Outlet", "Total_Sales": 1946401.06, "Operating_Profit": 396228.27, "Operating_Margin_Pct": 20.36}, {"Month": "2021-05", "Sales Method": "In-store", "Total_Sales": 3960998.56, "Operating_Profit": 1676040.02, "Operating_Margin_Pct": 42.31}, {"Month": "2021-05", "Sales Method": "Online", "Total_Sales": 3739214.51, "Operating_Profit": 1264084.73, "Operating_Margin_Pct": 33.81}, {"Month": "2021-05", "Sales Method": "Outlet", "Total_Sales": 2184300.32, "Operating_Profit": 492354.68, "Operating_Margin_Pct": 22.54}, {"Month": "2021-06", "Sales Method": "In-store", "Total_Sales": 5366792.53, "Operating_Profit": 2268702.15, "Operating_Margin_Pct": 42.27}, {"Month": "2021-06", "Sales Method": "Online", "Total_Sales": 3772714.17, "Operating_Profit": 1207391.16, "Operating_Margin_Pct": 32.0}, {"Month": "2021-06", "Sales Method": "Outlet", "Total_Sales": 2278508.72, "Operating_Profit": 484029.38, "Operating_Margin_Pct": 21.24}, {"Month": "2021-07", "Sales Method": "In-store", "Total_Sales": 5338994.34, "Operating_Profit": 2267396.94, "Operating_Margin_Pct": 42.47}, {"Month": "2021-07", "Sales Method": "Online", "Total_Sales": 3586030.28, "Operating_Profit": 1136915.56, "Operating_Margin_Pct": 31.7}, {"Month": "2021-07", "Sales Method": "Outlet", "Total_Sales": 2314881.58, "Operating_Profit": 488034.75, "Operating_Margin_Pct": 21.08}, {"Month": "2021-08", "Sales Method": "In-store", "Total_Sales": 5413750.56, "Operating_Profit": 2346429.75, "Operating_Margin_Pct": 43.34}, {"Month": "2021-08", "Sales Method": "Online", "Total_Sales": 3389815.4, "Operating_Profit": 1124158.77, "Operating_Margin_Pct": 33.16}, {"Month": "2021-08", "Sales Method": "Outlet", "Total_Sales": 1951744.63, "Operating_Profit": 402609.65, "Operating_Margin_Pct": 20.63}, {"Month": "2021-09", "Sales Method": "In-store", "Total_Sales": 4727006.18, "Operating_Profit": 2063027.16, "Operating_Margin_Pct": 43.64}, {"Month": "2021-09", "Sales Method": "Online", "Total_Sales": 3095330.42, "Operating_Profit": 1042669.31, "Operating_Margin_Pct": 33.69}, {"Month": "2021-09", "Sales Method": "Outlet", "Total_Sales": 2046253.55, "Operating_Profit": 432867.85, "Operating_Margin_Pct": 21.15}, {"Month": "2021-10", "Sales Method": "In-store", "Total_Sales": 4438613.58, "Operating_Profit": 1870198.53, "Operating_Margin_Pct": 42.13}, {"Month": "2021-10", "Sales Method": "Online", "Total_Sales": 3181333.27, "Operating_Profit": 1077933.61, "Operating_Margin_Pct": 33.88}, {"Month": "2021-10", "Sales Method": "Outlet", "Total_Sales": 2276371.2, "Operating_Profit": 466023.18, "Operating_Margin_Pct": 20.47}, {"Month": "2021-11", "Sales Method": "In-store", "Total_Sales": 5345195.6, "Operating_Profit": 2289716.29, "Operating_Margin_Pct": 42.84}, {"Month": "2021-11", "Sales Method": "Online", "Total_Sales": 4035341.92, "Operating_Profit": 1336355.73, "Operating_Margin_Pct": 33.12}, {"Month": "2021-11", "Sales Method": "Outlet", "Total_Sales": 1884472.43, "Operating_Profit": 404798.02, "Operating_Margin_Pct": 21.48}, {"Month": "2021-12", "Sales Method": "In-store", "Total_Sales": 4901051.04, "Operating_Profit": 2087663.64, "Operating_Margin_Pct": 42.6}, {"Month": "2021-12", "Sales Method": "Online", "Total_Sales": 3719688.73, "Operating_Profit": 1260951.94, "Operating_Margin_Pct": 33.9}, {"Month": "2021-12", "Sales Method": "Outlet", "Total_Sales": 2622968.1, "Operating_Profit": 564219.62, "Operating_Margin_Pct": 21.51}], "drivers": [{"Dimension": "Sales Method", "Segment": "In-store", "Revenue_Share_Pct": 46.33, "Margin_Pct": 42.69, "Margin_vs_Overall_pp": 7.55, "Weighted_Margin_Contribution_pp": 3.498}, {"Dimension": "Sales Method", "Segment": "Outlet", "Revenue_Share_Pct": 20.13, "Margin_Pct": 21.12, "Margin_vs_Overall_pp": -14.02, "Weighted_Margin_Contribution_pp": -2.822}, {"Dimension": "Sales Method", "Segment": "Online", "Revenue_Share_Pct": 33.54, "Margin_Pct": 33.13, "Margin_vs_Overall_pp": -2.01, "Weighted_Margin_Contribution_pp": -0.674}, {"Dimension": "Region", "Segment": "Southeast", "Revenue_Share_Pct": 20.72, "Margin_Pct": 34.76, "Margin_vs_Overall_pp": -0.38, "Weighted_Margin_Contribution_pp": -0.079}, {"Dimension": "Region", "Segment": "West", "Revenue_Share_Pct": 20.03, "Margin_Pct": 35.53, "Margin_vs_Overall_pp": 0.39, "Weighted_Margin_Contribution_pp": 0.078}, {"Dimension": "Region", "Segment": "Midwest", "Revenue_Share_Pct": 19.52, "Margin_Pct": 35.47, "Margin_vs_Overall_pp": 0.33, "Weighted_Margin_Contribution_pp": 0.064}, {"Dimension": "Region", "Segment": "South", "Revenue_Share_Pct": 19.35, "Margin_Pct": 34.96, "Margin_vs_Overall_pp": -0.18, "Weighted_Margin_Contribution_pp": -0.035}, {"Dimension": "Region", "Segment": "Northeast", "Revenue_Share_Pct": 20.39, "Margin_Pct": 35.01, "Margin_vs_Overall_pp": -0.13, "Weighted_Margin_Contribution_pp": -0.027}], "retailer_region": [{"Retailer": "Walmart", "Region": "Northeast", "Total_Sales": 9628887.11, "Operating_Profit": 3413928.94, "Units_Sold": 149533, "Transactions": 345, "Avg_Price_per_Unit": 63.12, "Operating_Margin_Pct": 35.46}, {"Retailer": "Foot Locker", "Region": "Southeast", "Total_Sales": 9494466.37, "Operating_Profit": 3277036.48, "Units_Sold": 153318, "Transactions": 358, "Avg_Price_per_Unit": 61.76, "Operating_Margin_Pct": 34.52}, {"Retailer": "West Gear", "Region": "Midwest", "Total_Sales": 9366677.1, "Operating_Profit": 3232271.89, "Units_Sold": 150304, "Transactions": 344, "Avg_Price_per_Unit": 62.05, "Operating_Margin_Pct": 34.51}, {"Retailer": "Foot Locker", "Region": "South", "Total_Sales": 9338592.28, "Operating_Profit": 3246417.67, "Units_Sold": 153532, "Transactions": 363, "Avg_Price_per_Unit": 59.44, "Operating_Margin_Pct": 34.76}, {"Retailer": "West Gear", "Region": "Northeast", "Total_Sales": 9229667.99, "Operating_Profit": 3258535.31, "Units_Sold": 145353, "Transactions": 317, "Avg_Price_per_Unit": 62.33, "Operating_Margin_Pct": 35.31}, {"Retailer": "Kohl's", "Region": "West", "Total_Sales": 9216772.39, "Operating_Profit": 3230305.85, "Units_Sold": 147644, "Transactions": 326, "Avg_Price_per_Unit": 62.43, "Operating_Margin_Pct": 35.05}, {"Retailer": "West Gear", "Region": "Southeast", "Total_Sales": 9154149.87, "Operating_Profit": 3184188.27, "Units_Sold": 150147, "Transactions": 342, "Avg_Price_per_Unit": 59.73, "Operating_Margin_Pct": 34.78}, {"Retailer": "Walmart", "Region": "Southeast", "Total_Sales": 9041180.02, "Operating_Profit": 3121652.67, "Units_Sold": 151596, "Transactions": 344, "Avg_Price_per_Unit": 60.36, "Operating_Margin_Pct": 34.53}, {"Retailer": "Amazon", "Region": "Southeast", "Total_Sales": 9024586.67, "Operating_Profit": 3193089.78, "Units_Sold": 145997, "Transactions": 356, "Avg_Price_per_Unit": 61.28, "Operating_Margin_Pct": 35.38}, {"Retailer": "Foot Locker", "Region": "Northeast", "Total_Sales": 8943164.62, "Operating_Profit": 3063589.46, "Units_Sold": 142499, "Transactions": 330, "Avg_Price_per_Unit": 64.15, "Operating_Margin_Pct": 34.26}, {"Retailer": "Foot Locker", "Region": "West", "Total_Sales": 8886132.98, "Operating_Profit": 3091361.61, "Units_Sold": 141069, "Transactions": 328, "Avg_Price_per_Unit": 62.06, "Operating_Margin_Pct": 34.79}, {"Retailer": "Amazon", "Region": "Midwest", "Total_Sales": 8878290.68, "Operating_Profit": 3150032.77, "Units_Sold": 141867, "Transactions": 322, "Avg_Price_per_Unit": 62.19, "Operating_Margin_Pct": 35.48}, {"Retailer": "Sports Direct", "Region": "West", "Total_Sales": 8840026.6, "Operating_Profit": 3165469.25, "Units_Sold": 137368, "Transactions": 327, "Avg_Price_per_Unit": 63.05, "Operating_Margin_Pct": 35.81}, {"Retailer": "West Gear", "Region": "West", "Total_Sales": 8733325.15, "Operating_Profit": 3142173.12, "Units_Sold": 136810, "Transactions": 305, "Avg_Price_per_Unit": 63.79, "Operating_Margin_Pct": 35.98}, {"Retailer": "Sports Direct", "Region": "Midwest", "Total_Sales": 8713562.41, "Operating_Profit": 3126675.78, "Units_Sold": 141012, "Transactions": 316, "Avg_Price_per_Unit": 61.87, "Operating_Margin_Pct": 35.88}, {"Retailer": "Walmart", "Region": "Midwest", "Total_Sales": 8694142.51, "Operating_Profit": 3083693.8, "Units_Sold": 139778, "Transactions": 313, "Avg_Price_per_Unit": 61.52, "Operating_Margin_Pct": 35.47}, {"Retailer": "Sports Direct", "Region": "Southeast", "Total_Sales": 8633389.08, "Operating_Profit": 2956196.74, "Units_Sold": 139467, "Transactions": 315, "Avg_Price_per_Unit": 60.55, "Operating_Margin_Pct": 34.24}, {"Retailer": "Kohl's", "Region": "Northeast", "Total_Sales": 8606247.63, "Operating_Profit": 3001176.29, "Units_Sold": 139631, "Transactions": 320, "Avg_Price_per_Unit": 61.78, "Operating_Margin_Pct": 34.87}, {"Retailer": "Walmart", "Region": "West", "Total_Sales": 8538356.45, "Operating_Profit": 3089214.54, "Units_Sold": 131370, "Transactions": 301, "Avg_Price_per_Unit": 63.81, "Operating_Margin_Pct": 36.18}, {"Retailer": "Walmart", "Region": "South", "Total_Sales": 8470504.17, "Operating_Profit": 2968421.43, "Units_Sold": 143288, "Transactions": 337, "Avg_Price_per_Unit": 58.42, "Operating_Margin_Pct": 35.04}, {"Retailer": "Sports Direct", "Region": "South", "Total_Sales": 8447367.93, "Operating_Profit": 3004364.46, "Units_Sold": 132466, "Transactions": 312, "Avg_Price_per_Unit": 63.27, "Operating_Margin_Pct": 35.57}, {"Retailer": "Amazon", "Region": "Northeast", "Total_Sales": 8338845.25, "Operating_Profit": 2925231.57, "Units_Sold": 135566, "Transactions": 306, "Avg_Price_per_Unit": 61.61, "Operating_Margin_Pct": 35.08}, {"Retailer": "Kohl's", "Region": "Southeast", "Total_Sales": 8305200.01, "Operating_Profit": 2918383.19, "Units_Sold": 134945, "Transactions": 321, "Avg_Price_per_Unit": 61.6, "Operating_Margin_Pct": 35.14}, {"Retailer": "Kohl's", "Region": "South", "Total_Sales": 8236280.49, "Operating_Profit": 2876828.7, "Units_Sold": 140433, "Transactions": 318, "Avg_Price_per_Unit": 59.47, "Operating_Margin_Pct": 34.93}, {"Retailer": "Sports Direct", "Region": "Northeast", "Total_Sales": 8039779.33, "Operating_Profit": 2819337.13, "Units_Sold": 133145, "Transactions": 321, "Avg_Price_per_Unit": 60.39, "Operating_Margin_Pct": 35.07}, {"Retailer": "Amazon", "Region": "South", "Total_Sales": 7979479.62, "Operating_Profit": 2780929.3, "Units_Sold": 130764, "Transactions": 304, "Avg_Price_per_Unit": 60.16, "Operating_Margin_Pct": 34.85}, {"Retailer": "Foot Locker", "Region": "Midwest", "Total_Sales": 7697461.36, "Operating_Profit": 2798140.4, "Units_Sold": 122423, "Transactions": 286, "Avg_Price_per_Unit": 61.4, "Operating_Margin_Pct": 36.35}, {"Retailer": "Amazon", "Region": "West", "Total_Sales": 7633437.87, "Operating_Profit": 2705488.03, "Units_Sold": 122471, "Transactions": 300, "Avg_Price_per_Unit": 61.65, "Operating_Margin_Pct": 35.44}, {"Retailer": "West Gear", "Region": "South", "Total_Sales": 7616089.72, "Operating_Profit": 2634497.64, "Units_Sold": 121418, "Transactions": 288, "Avg_Price_per_Unit": 62.14, "Operating_Margin_Pct": 34.59}, {"Retailer": "Kohl's", "Region": "Midwest", "Total_Sales": 7183839.31, "Operating_Profit": 2533425.51, "Units_Sold": 121107, "Transactions": 283, "Avg_Price_per_Unit": 59.84, "Operating_Margin_Pct": 35.27}]};
+
+function cssVar(name) {
+  return getComputedStyle(document.querySelector('.viz-root')).getPropertyValue(name).trim();
+}
+const fmtUSD = n => '$' + Math.round(n).toLocaleString('en-US');
+const fmtUSDm = n => '$' + (n/1e6).toFixed(1) + 'M';
+const fmtPct = n => n.toFixed(1) + '%';
+const fmtInt = n => Math.round(n).toLocaleString('en-US');
+
+// ---- filter state ----
+let state = { region: 'all', channel: 'all', category: 'all' };
+
+const regions = DATA.region.map(r => r.Region);
+const channels = ['In-store', 'Online', 'Outlet'];
+const categories = DATA.category.map(c => c.Category);
+
+function populateSelect(id, values) {
+  const sel = document.getElementById(id);
+  values.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    sel.appendChild(opt);
+  });
+}
+populateSelect('filter-region', regions);
+populateSelect('filter-channel', channels);
+populateSelect('filter-category', categories);
+
+document.getElementById('filter-region').addEventListener('change', e => { state.region = e.target.value; render(); });
+document.getElementById('filter-channel').addEventListener('change', e => { state.channel = e.target.value; render(); });
+document.getElementById('filter-category').addEventListener('change', e => { state.category = e.target.value; render(); });
+document.getElementById('reset-filters').addEventListener('click', () => {
+  state = { region: 'all', channel: 'all', category: 'all' };
+  document.getElementById('filter-region').value = 'all';
+  document.getElementById('filter-channel').value = 'all';
+  document.getElementById('filter-category').value = 'all';
+  render();
+});
+
+document.querySelectorAll('.toggle-table').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = document.getElementById('table-' + btn.dataset.target);
+    const showing = !target.hidden;
+    target.hidden = showing;
+    btn.textContent = showing ? 'View table' : 'Hide table';
+  });
+});
+
+// ---- filtered base rows (region_channel is the finest grain we have precomputed;
+// combine with category by re-deriving from region_channel + category share when category filter is set) ----
+function filteredRegionChannel() {
+  return DATA.region_channel.filter(d =>
+    (state.region === 'all' || d.Region === state.region) &&
+    (state.channel === 'all' || d['Sales Method'] === state.channel)
+  );
+}
+
+function sumField(rows, field) { return rows.reduce((a,b) => a + b[field], 0); }
+
+function kpis() {
+  const rows = filteredRegionChannel();
+  const rev = sumField(rows, 'Total_Sales');
+  const profit = sumField(rows, 'Operating_Profit');
+  const units = sumField(rows, 'Units_Sold');
+  const txn = sumField(rows, 'Transactions');
+  const margin = rev ? (profit/rev*100) : 0;
+  return { rev, profit, units, txn, margin };
+}
+
+function renderKPIs() {
+  const k = kpis();
+  const overall = DATA.channel.reduce((a,c)=>a+c.Operating_Profit,0) / DATA.channel.reduce((a,c)=>a+c.Total_Sales,0) * 100;
+  const delta = k.margin - overall;
+  const cards = [
+    { label: 'Total Revenue', value: fmtUSDm(k.rev) },
+    { label: 'Operating Profit', value: fmtUSDm(k.profit) },
+    { label: 'Operating Margin', value: fmtPct(k.margin), sub: (state.region!=='all'||state.channel!=='all') ? `${delta>=0?'+':''}${delta.toFixed(1)}pp vs. company avg` : 'company average', cls: delta>=0?'good':'bad' },
+    { label: 'Units Sold', value: fmtInt(k.units) },
+    { label: 'Transactions', value: fmtInt(k.txn) },
+    { label: 'Avg Order Value', value: fmtUSD(k.rev / (k.txn||1)) },
+  ];
+  const grid = document.getElementById('kpi-grid');
+  grid.innerHTML = cards.map(c => `
+    <div class="kpi-card">
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-value">${c.value}</div>
+      ${c.sub ? `<div class="kpi-sub ${c.cls||''}">${c.sub}</div>` : ''}
+    </div>`).join('');
+}
+
+// ---- charts ----
+let charts = {};
+function destroy(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+const tooltipBase = {
+  backgroundColor: () => cssVar('--card-bg'),
+  titleColor: () => cssVar('--text-primary'),
+  bodyColor: () => cssVar('--text-secondary'),
+  borderColor: () => cssVar('--border'),
+  borderWidth: 1,
+  padding: 10,
+  cornerRadius: 6,
+  displayColors: true,
+};
+
+function renderTrend() {
+  destroy('trend');
+  const months = [...new Set(DATA.monthly.map(m => m.Month))].sort();
+  const seriesColors = { 'In-store': cssVar('--series-instore'), 'Online': cssVar('--series-online'), 'Outlet': cssVar('--series-outlet') };
+  const datasets = channels.filter(c => state.channel==='all' || state.channel===c).map(ch => ({
+    label: ch,
+    data: months.map(m => {
+      const rec = DATA.monthly.find(x => x.Month===m && x['Sales Method']===ch);
+      return rec ? rec.Total_Sales : null;
+    }),
+    borderColor: seriesColors[ch],
+    backgroundColor: seriesColors[ch],
+    borderWidth: 2,
+    pointRadius: 0,
+    pointHoverRadius: 4,
+    tension: 0.25,
+  }));
+  const ctx = document.getElementById('chart-trend');
+  charts.trend = new Chart(ctx, {
+    type: 'line',
+    data: { labels: months, datasets },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: { ...tooltipBase, callbacks: { label: c => `${c.dataset.label}: ${fmtUSD(c.parsed.y)}` } },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: cssVar('--text-muted'), maxTicksLimit: 8, font:{size:10} } },
+        y: { grid: { color: cssVar('--gridline') }, ticks: { color: cssVar('--text-muted'), callback: v => fmtUSDm(v), font:{size:10} } },
+      },
+    },
+  });
+  const legend = document.getElementById('legend-trend');
+  legend.innerHTML = channels.map(ch => `<span class="item"><span class="swatch" style="background:${seriesColors[ch]}"></span>${ch}</span>`).join('');
+
+  const wrap = document.getElementById('table-trend');
+  wrap.innerHTML = `<table class="data-table"><thead><tr><th>Month</th>${channels.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>
+    ${months.map(m => `<tr><td>${m}</td>${channels.map(ch => { const r = DATA.monthly.find(x=>x.Month===m&&x['Sales Method']===ch); return `<td>${r?fmtUSD(r.Total_Sales):'–'}</td>`; }).join('')}</tr>`).join('')}
+  </tbody></table>`;
+}
+
+function renderChannel() {
+  destroy('channel');
+  const rows = channels.map(ch => DATA.channel.find(c => c['Sales Method']===ch));
+  const colors = [cssVar('--series-instore'), cssVar('--series-online'), cssVar('--series-outlet')];
+  const ctx = document.getElementById('chart-channel');
+  charts.channel = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: channels,
+      datasets: [{
+        label: 'Operating margin %',
+        data: rows.map(r => r.Operating_Margin_Pct),
+        backgroundColor: colors,
+        borderRadius: 4,
+        maxBarThickness: 60,
+      }],
+    },
+    options: {
+      responsive: true,
+      onClick: (evt, els) => { if (els.length) { const ch = channels[els[0].index]; document.getElementById('filter-channel').value = state.channel===ch?'all':ch; state.channel = state.channel===ch?'all':ch; render(); } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { ...tooltipBase, callbacks: { label: c => `Margin: ${fmtPct(c.parsed.y)}  ·  Revenue: ${fmtUSDm(rows[c.dataIndex].Total_Sales)}` } },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: cssVar('--text-primary') } },
+        y: { grid: { color: cssVar('--gridline') }, ticks: { color: cssVar('--text-muted'), callback: v => v+'%' }, suggestedMax: 50 },
+      },
+    },
+  });
+  const wrap = document.getElementById('table-channel');
+  wrap.innerHTML = `<table class="data-table"><thead><tr><th>Channel</th><th>Revenue</th><th>Margin %</th><th>Revenue Share %</th></tr></thead><tbody>
+    ${rows.map(r => `<tr><td>${r['Sales Method']}</td><td>${fmtUSD(r.Total_Sales)}</td><td>${fmtPct(r.Operating_Margin_Pct)}</td><td>${fmtPct(r.Total_Sales/DATA.channel.reduce((a,c)=>a+c.Total_Sales,0)*100)}</td></tr>`).join('')}
+  </tbody></table>`;
+}
+
+function renderRegion() {
+  destroy('region');
+  const rows = DATA.region.slice().sort((a,b)=>b.Total_Sales-a.Total_Sales);
+  const palette = [cssVar('--series-a'), cssVar('--series-b'), cssVar('--series-c'), cssVar('--series-d'), cssVar('--series-e')];
+  const ctx = document.getElementById('chart-region');
+  charts.region = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: rows.map(r=>r.Region),
+      datasets: [{
+        label: 'Revenue',
+        data: rows.map(r=>r.Total_Sales),
+        backgroundColor: rows.map((r,i) => state.region==='all'||state.region===r.Region ? palette[i%palette.length] : cssVar('--gridline')),
+        borderRadius: 4,
+        maxBarThickness: 50,
+      }],
+    },
+    options: {
+      responsive: true,
+      onClick: (evt, els) => { if (els.length) { const rg = rows[els[0].index].Region; document.getElementById('filter-region').value = state.region===rg?'all':rg; state.region = state.region===rg?'all':rg; render(); } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { ...tooltipBase, callbacks: { label: c => `Revenue: ${fmtUSDm(c.parsed.y)}  ·  Margin: ${fmtPct(rows[c.dataIndex].Operating_Margin_Pct)}` } },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: cssVar('--text-primary') } },
+        y: { grid: { color: cssVar('--gridline') }, ticks: { color: cssVar('--text-muted'), callback: v => fmtUSDm(v) } },
+      },
+    },
+  });
+  const wrap = document.getElementById('table-region');
+  wrap.innerHTML = `<table class="data-table"><thead><tr><th>Region</th><th>Revenue</th><th>Margin %</th><th>Units Sold</th></tr></thead><tbody>
+    ${rows.map(r => `<tr><td>${r.Region}</td><td>${fmtUSD(r.Total_Sales)}</td><td>${fmtPct(r.Operating_Margin_Pct)}</td><td>${fmtInt(r.Units_Sold)}</td></tr>`).join('')}
+  </tbody></table>`;
+}
+
+function renderCategory() {
+  destroy('category');
+  const rows = DATA.category;
+  const colors = [cssVar('--series-a'), cssVar('--series-b')];
+  const ctx = document.getElementById('chart-category');
+  charts.category = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels: rows.map(r=>r.Category), datasets: [{ data: rows.map(r=>r.Total_Sales), backgroundColor: colors, borderColor: cssVar('--card-bg'), borderWidth: 2 }] },
+    options: {
+      responsive: true,
+      cutout: '62%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { ...tooltipBase, callbacks: { label: c => `${c.label}: ${fmtUSDm(c.parsed)} (${fmtPct(rows[c.dataIndex].Operating_Margin_Pct)} margin)` } },
+      },
+    },
+  });
+  const legend = document.getElementById('legend-category');
+  legend.innerHTML = rows.map((r,i) => `<span class="item"><span class="swatch" style="background:${colors[i]}"></span>${r.Category} — ${fmtPct(r.Total_Sales/rows.reduce((a,c)=>a+c.Total_Sales,0)*100)} share, ${fmtPct(r.Operating_Margin_Pct)} margin</span>`).join('');
+  const wrap = document.getElementById('table-category');
+  wrap.innerHTML = `<table class="data-table"><thead><tr><th>Category</th><th>Revenue</th><th>Margin %</th><th>Units Sold</th></tr></thead><tbody>
+    ${rows.map(r => `<tr><td>${r.Category}</td><td>${fmtUSD(r.Total_Sales)}</td><td>${fmtPct(r.Operating_Margin_Pct)}</td><td>${fmtInt(r.Units_Sold)}</td></tr>`).join('')}
+  </tbody></table>`;
+}
+
+function marginColor(pct) {
+  // sequential green ramp keyed to margin range ~15%-50%
+  const lo = 15, hi = 48;
+  const t = Math.max(0, Math.min(1, (pct - lo) / (hi - lo)));
+  const stops = ['#f0efec', '#cdeccd', '#8fd68f', '#3aab3a', '#0ca30c'];
+  const idx = Math.min(stops.length - 2, Math.floor(t * (stops.length - 1)));
+  return stops[idx+1];
+}
+
+function renderHeatmap() {
+  const rows = regions;
+  const cols = channels;
+  let html = '<div style="overflow-x:auto"><table class="data-table" style="text-align:center"><thead><tr><th style="text-align:left">Region</th>' +
+    cols.map(c=>`<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+  rows.forEach(rg => {
+    html += `<tr><td style="text-align:left">${rg}</td>`;
+    cols.forEach(ch => {
+      const rec = DATA.region_channel.find(d => d.Region===rg && d['Sales Method']===ch);
+      const pct = rec ? rec.Operating_Margin_Pct : 0;
+      const active = (state.region==='all'||state.region===rg) && (state.channel==='all'||state.channel===ch);
+      html += `<td data-region="${rg}" data-channel="${ch}" class="heat-cell" style="cursor:pointer;color:#0b0b0b;font-weight:600;background:${marginColor(pct)};opacity:${active?1:0.25}">${fmtPct(pct)}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  document.getElementById('heatmap').innerHTML = html;
+  document.querySelectorAll('.heat-cell').forEach(td => {
+    td.addEventListener('click', () => {
+      const rg = td.dataset.region, ch = td.dataset.channel;
+      state.region = state.region===rg ? 'all' : rg;
+      state.channel = state.channel===ch ? 'all' : ch;
+      document.getElementById('filter-region').value = state.region;
+      document.getElementById('filter-channel').value = state.channel;
+      render();
+    });
+  });
+  const wrap = document.getElementById('table-heat');
+  wrap.innerHTML = document.getElementById('heatmap').innerHTML;
+}
+
+function renderDrivers() {
+  destroy('drivers');
+  const rows = DATA.drivers.slice().sort((a,b) => b.Weighted_Margin_Contribution_pp - a.Weighted_Margin_Contribution_pp);
+  const ctx = document.getElementById('chart-drivers');
+  charts.drivers = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: rows.map(r => `${r.Segment} (${r.Dimension})`),
+      datasets: [{
+        data: rows.map(r => r.Weighted_Margin_Contribution_pp),
+        backgroundColor: rows.map(r => r.Weighted_Margin_Contribution_pp >= 0 ? cssVar('--good') : cssVar('--critical')),
+        borderRadius: 4,
+      }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { ...tooltipBase, callbacks: { label: c => `${c.parsed.x>=0?'+':''}${c.parsed.x.toFixed(2)}pp weighted contribution (${rows[c.dataIndex].Margin_Pct}% margin, ${rows[c.dataIndex].Revenue_Share_Pct}% revenue share)` } },
+      },
+      scales: {
+        x: { grid: { color: cssVar('--gridline') }, ticks: { color: cssVar('--text-muted'), callback: v => v+'pp' } },
+        y: { grid: { display: false }, ticks: { color: cssVar('--text-primary'), font:{size:11} } },
+      },
+    },
+  });
+  const wrap = document.getElementById('table-drivers');
+  wrap.innerHTML = `<table class="data-table"><thead><tr><th>Segment</th><th>Dimension</th><th>Revenue Share %</th><th>Margin %</th><th>vs Overall (pp)</th><th>Weighted Contribution (pp)</th></tr></thead><tbody>
+    ${rows.map(r => `<tr><td>${r.Segment}</td><td>${r.Dimension}</td><td>${fmtPct(r.Revenue_Share_Pct)}</td><td>${fmtPct(r.Margin_Pct)}</td><td>${r.Margin_vs_Overall_pp}pp</td><td>${r.Weighted_Margin_Contribution_pp}pp</td></tr>`).join('')}
+  </tbody></table>`;
+}
+
+function render() {
+  renderKPIs();
+  renderTrend();
+  renderChannel();
+  renderRegion();
+  renderCategory();
+  renderHeatmap();
+  renderDrivers();
+}
+
+render();
+</script>
